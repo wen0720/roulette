@@ -7,351 +7,103 @@ var _pixi = require('pixi.js');
 
 var PIXI = _interopRequireWildcard(_pixi);
 
-var _util = require('./util');
-
-var _data = require('./data');
-
-var _data2 = _interopRequireDefault(_data);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var game = function () {
-    function game(data) {
-        _classCallCheck(this, game);
+var Game = function () {
+  function Game() {
+    _classCallCheck(this, Game);
 
-        // alias
-        this.Application = PIXI.Application, this.Container = PIXI.Container, this.Sprite = PIXI.Sprite, this.TextureCache = PIXI.utils.TextureCache;
+    // alias
+    this.Application = PIXI.Application;
+    this.Container = PIXI.Container;
+    this.Sprite = PIXI.Sprite;
+    this.TextureCache = PIXI.utils.TextureCache;
+    this.Graphics = PIXI.Graphics;
 
-        // game
-        this.fallListData;
-        this.fallListFinal = [];
-        this.fallContainer = new this.Container();
-        this.state = this.play;
-        this.hasDrawlist = [];
-        this.noworder = 0;
+    // create PIXI application
+    this.app = new this.Application({
+      width: 600,
+      height: 600,
+      antialias: true,
+      transparent: false,
+      resolution: 1
+    });
 
-        this.col;
-        this.colWidth;
+    // 全螢幕
+    this.app.renderer.view.style.position = 'absolute';
+    this.app.renderer.view.style.display = 'block';
+    this.app.renderer.autoResize = true;
+    this.app.renderer.resize(window.innerWidth, window.innerHeight);
 
-        // create PIXI application 
-        this.app = new this.Application({
-            width: 600,
-            height: 600,
-            antialias: true,
-            transparent: false,
-            resolution: 1
-        });
+    // state
+    this.state = this.play;
 
-        // data from argument
-        this.data = data;
+    this.loader = this.app.loader;
+    this.resources = this.loader.resources;
 
-        // 全螢幕
-        this.app.renderer.view.style.position = "absolute";
-        this.app.renderer.view.style.display = "block";
-        this.app.renderer.autoResize = true;
-        this.app.renderer.resize(window.innerWidth, window.innerHeight);
+    // 將 canvas 加進 html 中
+    document.body.appendChild(this.app.view);
 
-        this.loader = this.app.loader;
-        this.resources = this.loader.resources;
+    this.loader
+    // .add(image)
+    .load(this.setup.bind(this));
+  }
 
-        // 將 canvas 加進 html 中
-        document.body.appendChild(this.app.view);
+  _createClass(Game, [{
+    key: 'setup',
+    value: function setup() {
+      // 所有的紋理集
+      // const allTextures = resources["./images/treasureHunter.json"].textures
+      // 先載入的會在下面
 
-        // // 加載圖片(用new 出來的 app)
-        var image = this.data.fallObj.map(function (el) {
-            return { name: el.name, url: el.url };
-        });
-
-        this.loader.add(image).load(this.setup.bind(this));
+      this.init();
+      // this.app.ticker.add(delta => this.gameLoop(delta))
     }
+  }, {
+    key: 'gameLoop',
+    value: function gameLoop(delta) {
+      // Runs the current game `state` in a loop and renders the sprites
+      this.state(delta);
+    }
+  }, {
+    key: 'play',
+    value: function play(delta) {
+      // All the game logic goes here
+      console.log(1);
+    }
+  }, {
+    key: 'end',
+    value: function end() {
+      // All the code that should run at the end of the game
+    }
+  }, {
+    key: 'init',
+    value: function init() {
+      // ctx.arc(x, y, radius, startAngle, endAngle, anticlockwise);
+      var radius = 50;
+      var halfRadius = radius / 2;
+      var centerX = window.innerWidth / 2;
+      var centerY = window.innerheight / 2;
 
-    _createClass(game, [{
-        key: 'setup',
-        value: function setup() {
-            // 所有的紋理集
-            // const allTextures = resources["./images/treasureHunter.json"].textures                
-            // 先載入的會在下面        
+      var arc = new this.Graphics();
+      arc.beginFill(0x3333DD);
+      arc.arc(centerX - halfRadius, centerY - halfRadius, radius, 2 * Math.PI, 2 * Math.PI / 6);
+      arc.lineTo(centerX - halfRadius, centerY - halfRadius);
+      arc.closePath();
+      arc.endFill();
+      console.log(arc);
+      this.app.stage.addChild(arc);
+    }
+  }]);
 
-            // console.log(this.resources)
-            // let good = new this.Sprite(this.resources['good'].texture)        
-            // good.x = 50
-            // this.app.stage.addChild(good)        
-            this.init(this.data);
-            // this.app.ticker.add(delta => this.gameLoop(delta))
-        }
-
-        // func 加入舞台
-        // func 讓東西掉下來
-        // func 檢查是否掉一半    
-        // data 紀錄現在的掉落順序
-
-    }, {
-        key: 'gameLoop',
-        value: function gameLoop(delta) {
-            // Runs the current game `state` in a loop and renders the sprites             
-            this.state(delta);
-        }
-    }, {
-        key: 'play',
-        value: function play(delta) {
-            // All the game logic goes here   
-            var _this = this;
-
-            function draw(stage, fallList, order) {
-                if (_this.hasDrawlist.indexOf(order) === -1) {
-                    var container = fallList[order].container;
-                    container.children[0].x = _this.colWidth * fallList[order].xNum + _this.colWidth / 2 - container.width / 2;
-                    container.children[0].y = 0;
-                    stage.addChild(container);
-
-                    _this.hasDrawlist.push(order);
-                }
-            }
-
-            function fall(fallList, order) {
-                var el = fallList[order].container;
-                var vy = fallList[order].speed;
-                el.children[0].y += vy;
-            }
-
-            draw(this.fallContainer, this.fallListFinal, this.noworder);
-            fall(this.fallListFinal, this.noworder);
-        }
-    }, {
-        key: 'end',
-        value: function end() {
-            // All the code that should run at the end of the game
-        }
-    }, {
-        key: 'init',
-        value: function init(config) {
-            var _this2 = this;
-
-            var _this = this;
-
-            // 設定
-            var setting = config.fallConfig;
-            var imagelist = config.fallObj;
-
-            // 視窗寬高
-            var winWith = window.innerWidth;
-            var winHeight = window.innerHeight;
-
-            this.col = setting.col;
-            this.colWidth = Math.floor(winWith / this.col);
-
-            // 掉落集合 config
-            // let fallContainer = new this.Container();                
-            var col = this.col;
-            var colWidth = this.colWidth;
-            var colGutter = setting.colGutter;
-            var style = setting.style; // 掉落物種類
-            var items = (0, _util.getItems)(col, style, col); // 最小一組的個數，且4行以上       
-            var itemsRow = items / col;
-
-            // 掉落物各類別資訊
-            this.fallListData = imagelist.map(function (el, idx) {
-                var keys = Object.keys(_this2.resources);
-                el.id = idx + 1; // id
-                el.resource = _this2.resources[keys[idx]]; // texture
-                el.total = Math.round(items * el.density); // 數量
-                return el;
-            }).sort(function (a, b) {
-                return b.total - a.total;
-            });
-
-            console.log('items', items, 'itemsRow', itemsRow);
-            console.log('fallListData', this.fallListData);
-
-            // let fallListFinal = []
-
-            // 將掉落資訊依個數轉換為每一個不同的掉落 container 物件
-            var fallListBasic = [];
-            this.fallListData.forEach(function (el) {
-                for (var i = 0; i < el.total; i++) {
-                    var fallObjConfig = Object.assign({}, el);
-                    var Container = new _this2.Container();
-                    var sprite = new _this2.Sprite(el.resource.texture);
-                    var scale = colWidth * 0.8 > sprite.width ? 1 : colWidth / sprite.width * 0.8; //乘.8是不想讓物件直接貼著邊            
-                    sprite.scale.y = sprite.scale.x = sprite.scale.x * scale;
-
-                    Container.addChild(sprite);
-                    fallObjConfig.container = Container;
-                    fallListBasic.push(fallObjConfig);
-                }
-            });
-            console.log(fallListBasic);
-
-            // 以最小組個數，算出最初掉，個別掉落物位於哪一col(x值)，掉落順序（y值）
-            var fallOrderConfig = [];
-            fallOrderConfig.length = fallListBasic.length;
-
-            function getRandomXY(col, rowTotal) {
-                var x = (0, _util.randomInt)(col - 1, 0);
-                var y = (0, _util.randomInt)(rowTotal - 1, 0);
-                return { x: x, y: y };
-            }
-
-            function setFallConfig(fallOrderConfig, el) {
-                var _getRandomXY = getRandomXY(col, fallListBasic.length),
-                    x = _getRandomXY.x,
-                    y = _getRandomXY.y;
-
-                if (fallOrderConfig[y] === undefined) {
-                    fallOrderConfig[y] = [];
-                    for (var i = 0; i < col; i++) {
-                        fallOrderConfig[y].push(0);
-                    }
-                    var _config = {
-                        xNum: x,
-                        yNum: y,
-                        container: el.container,
-                        speed: el.speed
-                    };
-                    fallOrderConfig[y][x] = el.id;
-                    _this.fallListFinal.push(_config);
-                    _this.fallListFinal.sort(function (a, b) {
-                        return a.yNum - b.yNum;
-                    });
-                } else {
-                    setFallConfig(fallOrderConfig, el);
-                }
-            }
-
-            fallListBasic.forEach(function (el) {
-                setFallConfig(fallOrderConfig, el);
-            });
-
-            console.log('fallOrderConfig', fallOrderConfig);
-            console.log('this.fallListFinal', this.fallListFinal);
-        }
-    }, {
-        key: 'check',
-        value: function check(randomId, checkBoard, style, col) {
-            return checkBoard.indexOf(randomId) === -1 ? randomId : this.check((0, _util.randomInt)(style - 1, 0), checkBoard, style, col);
-        }
-    }]);
-
-    return game;
+  return Game;
 }();
 
-new game(_data2.default);
+var game = new Game();
 
-function draw(stage, fallList, order) {
-    if (_this.hasDrawlist.indexOf(order) === -1) {
-        var container = fallList[order].container;
-        container.children[0].x = _this.colWidth * fallList[order].xNum + _this.colWidth / 2 - container.width / 2;
-        container.children[0].y = 0;
-        stage.addChild(container);
-
-        _this.hasDrawlist.push(order);
-    }
-}
-
-function fall(fallList, order) {
-    var el = fallList[order].container;
-    var vy = fallList[order].speed;
-    el.children[0].y += vy;
-}
-
-},{"./data":2,"./util":3,"pixi.js":45}],2:[function(require,module,exports){
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-exports.default = {
-    fallConfig: {
-        col: 5,
-        style: 4,
-        colGutter: 20
-    },
-    fallObj: [{
-        speed: 10,
-        density: 0.1,
-        name: 'good',
-        url: './images/img-goodGift.png'
-    }, {
-        speed: 2,
-        density: 0.25,
-        name: 'bad',
-        url: './images/img-badGift.png'
-    }, {
-        speed: 10,
-        density: 0.25,
-        name: 'bomb',
-        url: './images/img-bomb.png'
-    }, {
-        speed: 2,
-        density: 0.4,
-        name: 'clock',
-        url: './images/img-clock.png'
-    }]
-};
-
-},{}],3:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-function randomInt(max, min) {
-    var mutiple = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 1;
-
-    return (Math.floor(Math.random() * (Number(max) - Number(min) + 1)) + Number(min)) * mutiple;
-}
-
-// 最大公因數
-function gcd(m, n) {
-    var remainder = 0;
-    do {
-        remainder = m % n;
-        m = n;
-        n = remainder;
-    } while (remainder !== 0);
-    return m;
-}
-
-// 最小公倍數
-function lcm(m, n) {
-    return m * n / gcd(m, n);
-}
-
-// 檢查掉落數量最少要能填滿4行的量，為一個基礎量
-function chekcRowAtleast4(row, lcmItems) {
-    if (row < 4) {
-        switch (row % 4) {
-            case 1:
-                lcmItems = lcmItems * 4;
-                break;
-            case 2:
-                lcmItems = lcmItems * 2;
-                break;
-            case 3:
-                lcmItems = lcmItems * 2;
-                break;
-        }
-    }
-    return lcmItems;
-}
-
-// 取得最小掉落組數，且4行以上
-function getItems(m, n, col) {
-    var items = lcm(m, n);
-    var row = Math.ceil(items / col);
-    return chekcRowAtleast4(row, items);
-}
-
-exports.randomInt = randomInt;
-exports.gcd = gcd;
-exports.lcm = lcm;
-exports.getItems = getItems;
-
-},{}],4:[function(require,module,exports){
+},{"pixi.js":43}],2:[function(require,module,exports){
 /*!
  * @pixi/accessibility - v5.0.2
  * Compiled Tue, 07 May 2019 20:01:34 UTC
@@ -1000,7 +752,7 @@ exports.AccessibilityManager = AccessibilityManager;
 exports.accessibleTarget = accessibleTarget;
 
 
-},{"@pixi/display":8,"@pixi/utils":37}],5:[function(require,module,exports){
+},{"@pixi/display":6,"@pixi/utils":35}],3:[function(require,module,exports){
 /*!
  * @pixi/app - v5.0.2
  * Compiled Tue, 07 May 2019 20:01:34 UTC
@@ -1235,7 +987,7 @@ Application.registerPlugin(ResizePlugin);
 exports.Application = Application;
 
 
-},{"@pixi/core":7,"@pixi/display":8}],6:[function(require,module,exports){
+},{"@pixi/core":5,"@pixi/display":6}],4:[function(require,module,exports){
 /*!
  * @pixi/constants - v5.0.0-rc.3
  * Compiled Fri, 22 Mar 2019 16:33:44 UTC
@@ -1585,7 +1337,7 @@ exports.TYPES = TYPES;
 exports.WRAP_MODES = WRAP_MODES;
 
 
-},{}],7:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 /*!
  * @pixi/core - v5.0.2
  * Compiled Tue, 07 May 2019 20:01:34 UTC
@@ -13250,7 +13002,7 @@ exports.resources = index;
 exports.systems = systems;
 
 
-},{"@pixi/constants":6,"@pixi/display":8,"@pixi/math":19,"@pixi/runner":28,"@pixi/settings":29,"@pixi/ticker":36,"@pixi/utils":37}],8:[function(require,module,exports){
+},{"@pixi/constants":4,"@pixi/display":6,"@pixi/math":17,"@pixi/runner":26,"@pixi/settings":27,"@pixi/ticker":34,"@pixi/utils":35}],6:[function(require,module,exports){
 /*!
  * @pixi/display - v5.0.1
  * Compiled Mon, 06 May 2019 04:23:34 UTC
@@ -15051,7 +14803,7 @@ exports.Container = Container;
 exports.DisplayObject = DisplayObject;
 
 
-},{"@pixi/math":19,"@pixi/settings":29,"@pixi/utils":37}],9:[function(require,module,exports){
+},{"@pixi/math":17,"@pixi/settings":27,"@pixi/utils":35}],7:[function(require,module,exports){
 /*!
  * @pixi/extract - v5.0.2
  * Compiled Tue, 07 May 2019 20:01:34 UTC
@@ -15324,7 +15076,7 @@ Extract.prototype.destroy = function destroy ()
 exports.Extract = Extract;
 
 
-},{"@pixi/core":7,"@pixi/math":19,"@pixi/utils":37}],10:[function(require,module,exports){
+},{"@pixi/core":5,"@pixi/math":17,"@pixi/utils":35}],8:[function(require,module,exports){
 /*!
  * @pixi/filter-alpha - v5.0.2
  * Compiled Tue, 07 May 2019 20:01:34 UTC
@@ -15397,7 +15149,7 @@ var AlphaFilter = /*@__PURE__*/(function (Filter) {
 exports.AlphaFilter = AlphaFilter;
 
 
-},{"@pixi/core":7}],11:[function(require,module,exports){
+},{"@pixi/core":5}],9:[function(require,module,exports){
 /*!
  * @pixi/filter-blur - v5.0.2
  * Compiled Tue, 07 May 2019 20:01:34 UTC
@@ -15833,7 +15585,7 @@ exports.BlurFilter = BlurFilter;
 exports.BlurFilterPass = BlurFilterPass;
 
 
-},{"@pixi/core":7,"@pixi/settings":29}],12:[function(require,module,exports){
+},{"@pixi/core":5,"@pixi/settings":27}],10:[function(require,module,exports){
 /*!
  * @pixi/filter-color-matrix - v5.0.2
  * Compiled Tue, 07 May 2019 20:01:34 UTC
@@ -16440,7 +16192,7 @@ ColorMatrixFilter.prototype.grayscale = ColorMatrixFilter.prototype.greyscale;
 exports.ColorMatrixFilter = ColorMatrixFilter;
 
 
-},{"@pixi/core":7}],13:[function(require,module,exports){
+},{"@pixi/core":5}],11:[function(require,module,exports){
 /*!
  * @pixi/filter-displacement - v5.0.2
  * Compiled Tue, 07 May 2019 20:01:34 UTC
@@ -16567,7 +16319,7 @@ var DisplacementFilter = /*@__PURE__*/(function (Filter) {
 exports.DisplacementFilter = DisplacementFilter;
 
 
-},{"@pixi/core":7,"@pixi/math":19}],14:[function(require,module,exports){
+},{"@pixi/core":5,"@pixi/math":17}],12:[function(require,module,exports){
 /*!
  * @pixi/filter-fxaa - v5.0.2
  * Compiled Tue, 07 May 2019 20:01:34 UTC
@@ -16613,7 +16365,7 @@ var FXAAFilter = /*@__PURE__*/(function (Filter) {
 exports.FXAAFilter = FXAAFilter;
 
 
-},{"@pixi/core":7}],15:[function(require,module,exports){
+},{"@pixi/core":5}],13:[function(require,module,exports){
 /*!
  * @pixi/filter-noise - v5.0.2
  * Compiled Tue, 07 May 2019 20:01:34 UTC
@@ -16701,7 +16453,7 @@ var NoiseFilter = /*@__PURE__*/(function (Filter) {
 exports.NoiseFilter = NoiseFilter;
 
 
-},{"@pixi/core":7}],16:[function(require,module,exports){
+},{"@pixi/core":5}],14:[function(require,module,exports){
 /*!
  * @pixi/graphics - v5.0.2
  * Compiled Tue, 07 May 2019 20:01:34 UTC
@@ -20114,7 +19866,7 @@ exports.GraphicsGeometry = GraphicsGeometry;
 exports.LineStyle = LineStyle;
 
 
-},{"@pixi/constants":6,"@pixi/core":7,"@pixi/display":8,"@pixi/math":19,"@pixi/utils":37}],17:[function(require,module,exports){
+},{"@pixi/constants":4,"@pixi/core":5,"@pixi/display":6,"@pixi/math":17,"@pixi/utils":35}],15:[function(require,module,exports){
 /*!
  * @pixi/interaction - v5.0.2
  * Compiled Tue, 07 May 2019 20:01:34 UTC
@@ -22496,7 +22248,7 @@ exports.InteractionTrackingData = InteractionTrackingData;
 exports.interactiveTarget = interactiveTarget;
 
 
-},{"@pixi/display":8,"@pixi/math":19,"@pixi/ticker":36,"@pixi/utils":37}],18:[function(require,module,exports){
+},{"@pixi/display":6,"@pixi/math":17,"@pixi/ticker":34,"@pixi/utils":35}],16:[function(require,module,exports){
 /*!
  * @pixi/loaders - v5.0.2
  * Compiled Tue, 07 May 2019 20:01:34 UTC
@@ -24435,7 +24187,7 @@ exports.LoaderResource = LoaderResource;
 exports.TextureLoader = TextureLoader;
 
 
-},{"@pixi/core":7,"@pixi/utils":37,"resource-loader":55}],19:[function(require,module,exports){
+},{"@pixi/core":5,"@pixi/utils":35,"resource-loader":53}],17:[function(require,module,exports){
 /*!
  * @pixi/math - v5.0.0-rc.3
  * Compiled Fri, 22 Mar 2019 16:33:44 UTC
@@ -26274,7 +26026,7 @@ exports.SHAPES = SHAPES;
 exports.Transform = Transform;
 
 
-},{}],20:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 /*!
  * @pixi/mesh-extras - v5.0.2
  * Compiled Tue, 07 May 2019 20:01:34 UTC
@@ -27044,7 +26796,7 @@ exports.SimplePlane = SimplePlane;
 exports.SimpleRope = SimpleRope;
 
 
-},{"@pixi/core":7,"@pixi/mesh":21}],21:[function(require,module,exports){
+},{"@pixi/core":5,"@pixi/mesh":19}],19:[function(require,module,exports){
 /*!
  * @pixi/mesh - v5.0.2
  * Compiled Tue, 07 May 2019 20:01:34 UTC
@@ -27838,7 +27590,7 @@ exports.MeshGeometry = MeshGeometry;
 exports.MeshMaterial = MeshMaterial;
 
 
-},{"@pixi/constants":6,"@pixi/core":7,"@pixi/display":8,"@pixi/math":19,"@pixi/settings":29,"@pixi/utils":37}],22:[function(require,module,exports){
+},{"@pixi/constants":4,"@pixi/core":5,"@pixi/display":6,"@pixi/math":17,"@pixi/settings":27,"@pixi/utils":35}],20:[function(require,module,exports){
 /*!
  * @pixi/mixin-cache-as-bitmap - v5.0.2
  * Compiled Tue, 07 May 2019 20:01:34 UTC
@@ -28269,7 +28021,7 @@ display.DisplayObject.prototype._cacheAsBitmapDestroy = function _cacheAsBitmapD
 };
 
 
-},{"@pixi/core":7,"@pixi/display":8,"@pixi/math":19,"@pixi/settings":29,"@pixi/sprite":32,"@pixi/utils":37}],23:[function(require,module,exports){
+},{"@pixi/core":5,"@pixi/display":6,"@pixi/math":17,"@pixi/settings":27,"@pixi/sprite":30,"@pixi/utils":35}],21:[function(require,module,exports){
 /*!
  * @pixi/mixin-get-child-by-name - v5.0.1
  * Compiled Mon, 06 May 2019 04:23:34 UTC
@@ -28311,7 +28063,7 @@ display.Container.prototype.getChildByName = function getChildByName(name)
 };
 
 
-},{"@pixi/display":8}],24:[function(require,module,exports){
+},{"@pixi/display":6}],22:[function(require,module,exports){
 /*!
  * @pixi/mixin-get-global-position - v5.0.1
  * Compiled Mon, 06 May 2019 04:23:34 UTC
@@ -28354,7 +28106,7 @@ display.DisplayObject.prototype.getGlobalPosition = function getGlobalPosition(p
 };
 
 
-},{"@pixi/display":8,"@pixi/math":19}],25:[function(require,module,exports){
+},{"@pixi/display":6,"@pixi/math":17}],23:[function(require,module,exports){
 /*!
  * @pixi/particles - v5.0.2
  * Compiled Tue, 07 May 2019 20:01:34 UTC
@@ -29345,7 +29097,7 @@ exports.ParticleContainer = ParticleContainer;
 exports.ParticleRenderer = ParticleRenderer;
 
 
-},{"@pixi/constants":6,"@pixi/core":7,"@pixi/display":8,"@pixi/math":19,"@pixi/utils":37}],26:[function(require,module,exports){
+},{"@pixi/constants":4,"@pixi/core":5,"@pixi/display":6,"@pixi/math":17,"@pixi/utils":35}],24:[function(require,module,exports){
 (function (global){
 /*!
  * @pixi/polyfill - v5.0.0-rc.3
@@ -29514,7 +29266,7 @@ if (!window.Int32Array)
 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"es6-promise-polyfill":39,"object-assign":43}],27:[function(require,module,exports){
+},{"es6-promise-polyfill":37,"object-assign":41}],25:[function(require,module,exports){
 /*!
  * @pixi/prepare - v5.0.2
  * Compiled Tue, 07 May 2019 20:01:34 UTC
@@ -30244,7 +29996,7 @@ exports.Prepare = Prepare;
 exports.TimeLimiter = TimeLimiter;
 
 
-},{"@pixi/core":7,"@pixi/display":8,"@pixi/graphics":16,"@pixi/settings":29,"@pixi/text":35,"@pixi/ticker":36}],28:[function(require,module,exports){
+},{"@pixi/core":5,"@pixi/display":6,"@pixi/graphics":14,"@pixi/settings":27,"@pixi/text":33,"@pixi/ticker":34}],26:[function(require,module,exports){
 /*!
  * @pixi/runner - v5.0.0-rc.3
  * Compiled Tue, 30 Apr 2019 02:21:00 UTC
@@ -30444,7 +30196,7 @@ Runner.prototype.run = Runner.prototype.emit;
 exports.Runner = Runner;
 
 
-},{}],29:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 /*!
  * @pixi/settings - v5.0.1
  * Compiled Mon, 06 May 2019 04:23:34 UTC
@@ -30756,7 +30508,7 @@ exports.isMobile = isMobile;
 exports.settings = settings;
 
 
-},{"ismobilejs":41}],30:[function(require,module,exports){
+},{"ismobilejs":39}],28:[function(require,module,exports){
 /*!
  * @pixi/sprite-animated - v5.0.2
  * Compiled Tue, 07 May 2019 20:01:34 UTC
@@ -31217,7 +30969,7 @@ var AnimatedSprite = /*@__PURE__*/(function (Sprite) {
 exports.AnimatedSprite = AnimatedSprite;
 
 
-},{"@pixi/core":7,"@pixi/sprite":32,"@pixi/ticker":36}],31:[function(require,module,exports){
+},{"@pixi/core":5,"@pixi/sprite":30,"@pixi/ticker":34}],29:[function(require,module,exports){
 /*!
  * @pixi/sprite-tiling - v5.0.2
  * Compiled Tue, 07 May 2019 20:01:34 UTC
@@ -31727,7 +31479,7 @@ exports.TilingSprite = TilingSprite;
 exports.TilingSpriteRenderer = TilingSpriteRenderer;
 
 
-},{"@pixi/constants":6,"@pixi/core":7,"@pixi/math":19,"@pixi/sprite":32,"@pixi/utils":37}],32:[function(require,module,exports){
+},{"@pixi/constants":4,"@pixi/core":5,"@pixi/math":17,"@pixi/sprite":30,"@pixi/utils":35}],30:[function(require,module,exports){
 /*!
  * @pixi/sprite - v5.0.2
  * Compiled Tue, 07 May 2019 20:01:34 UTC
@@ -32392,7 +32144,7 @@ var Sprite = /*@__PURE__*/(function (Container) {
 exports.Sprite = Sprite;
 
 
-},{"@pixi/constants":6,"@pixi/core":7,"@pixi/display":8,"@pixi/math":19,"@pixi/settings":29,"@pixi/utils":37}],33:[function(require,module,exports){
+},{"@pixi/constants":4,"@pixi/core":5,"@pixi/display":6,"@pixi/math":17,"@pixi/settings":27,"@pixi/utils":35}],31:[function(require,module,exports){
 /*!
  * @pixi/spritesheet - v5.0.2
  * Compiled Tue, 07 May 2019 20:01:34 UTC
@@ -32813,7 +32565,7 @@ exports.Spritesheet = Spritesheet;
 exports.SpritesheetLoader = SpritesheetLoader;
 
 
-},{"@pixi/core":7,"@pixi/loaders":18,"@pixi/math":19,"@pixi/utils":37}],34:[function(require,module,exports){
+},{"@pixi/core":5,"@pixi/loaders":16,"@pixi/math":17,"@pixi/utils":35}],32:[function(require,module,exports){
 /*!
  * @pixi/text-bitmap - v5.0.2
  * Compiled Tue, 07 May 2019 20:01:34 UTC
@@ -33654,7 +33406,7 @@ exports.BitmapFontLoader = BitmapFontLoader;
 exports.BitmapText = BitmapText;
 
 
-},{"@pixi/core":7,"@pixi/display":8,"@pixi/loaders":18,"@pixi/math":19,"@pixi/settings":29,"@pixi/sprite":32,"@pixi/utils":37}],35:[function(require,module,exports){
+},{"@pixi/core":5,"@pixi/display":6,"@pixi/loaders":16,"@pixi/math":17,"@pixi/settings":27,"@pixi/sprite":30,"@pixi/utils":35}],33:[function(require,module,exports){
 /*!
  * @pixi/text - v5.0.2
  * Compiled Tue, 07 May 2019 20:01:34 UTC
@@ -35912,7 +35664,7 @@ exports.TextMetrics = TextMetrics;
 exports.TextStyle = TextStyle;
 
 
-},{"@pixi/core":7,"@pixi/math":19,"@pixi/settings":29,"@pixi/sprite":32,"@pixi/utils":37}],36:[function(require,module,exports){
+},{"@pixi/core":5,"@pixi/math":17,"@pixi/settings":27,"@pixi/sprite":30,"@pixi/utils":35}],34:[function(require,module,exports){
 /*!
  * @pixi/ticker - v5.0.1
  * Compiled Mon, 06 May 2019 04:23:34 UTC
@@ -36862,7 +36614,7 @@ exports.TickerPlugin = TickerPlugin;
 exports.UPDATE_PRIORITY = UPDATE_PRIORITY;
 
 
-},{"@pixi/settings":29}],37:[function(require,module,exports){
+},{"@pixi/settings":27}],35:[function(require,module,exports){
 /*!
  * @pixi/utils - v5.0.1
  * Compiled Mon, 06 May 2019 04:23:34 UTC
@@ -37867,7 +37619,7 @@ exports.trimCanvas = trimCanvas;
 exports.uid = uid;
 
 
-},{"@pixi/constants":6,"@pixi/settings":29,"earcut":38,"eventemitter3":40,"url":57}],38:[function(require,module,exports){
+},{"@pixi/constants":4,"@pixi/settings":27,"earcut":36,"eventemitter3":38,"url":55}],36:[function(require,module,exports){
 'use strict';
 
 module.exports = earcut;
@@ -38519,7 +38271,7 @@ earcut.flatten = function (data) {
     return result;
 };
 
-},{}],39:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 (function (global,setImmediate){
 (function(global){
 
@@ -38869,7 +38621,7 @@ Promise.reject = function(reason){
 })(typeof window != 'undefined' ? window : typeof global != 'undefined' ? global : typeof self != 'undefined' ? self : this);
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("timers").setImmediate)
-},{"timers":56}],40:[function(require,module,exports){
+},{"timers":54}],38:[function(require,module,exports){
 'use strict';
 
 var has = Object.prototype.hasOwnProperty
@@ -39207,9 +38959,9 @@ if ('undefined' !== typeof module) {
   module.exports = EventEmitter;
 }
 
-},{}],41:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 !function(e){var n=/iPhone/i,t=/iPod/i,r=/iPad/i,a=/\bAndroid(?:.+)Mobile\b/i,p=/Android/i,l=/\bAndroid(?:.+)SD4930UR\b/i,b=/\bAndroid(?:.+)(?:KF[A-Z]{2,4})\b/i,f=/Windows Phone/i,u=/\bWindows(?:.+)ARM\b/i,c=/BlackBerry/i,s=/BB10/i,v=/Opera Mini/i,h=/\b(CriOS|Chrome)(?:.+)Mobile/i,w=/\Mobile(?:.+)Firefox\b/i;function m(e,i){return e.test(i)}function i(e){var i=e||("undefined"!=typeof navigator?navigator.userAgent:""),o=i.split("[FBAN");void 0!==o[1]&&(i=o[0]),void 0!==(o=i.split("Twitter"))[1]&&(i=o[0]);var d={apple:{phone:m(n,i)&&!m(f,i),ipod:m(t,i),tablet:!m(n,i)&&m(r,i)&&!m(f,i),device:(m(n,i)||m(t,i)||m(r,i))&&!m(f,i)},amazon:{phone:m(l,i),tablet:!m(l,i)&&m(b,i),device:m(l,i)||m(b,i)},android:{phone:!m(f,i)&&m(l,i)||!m(f,i)&&m(a,i),tablet:!m(f,i)&&!m(l,i)&&!m(a,i)&&(m(b,i)||m(p,i)),device:!m(f,i)&&(m(l,i)||m(b,i)||m(a,i)||m(p,i))},windows:{phone:m(f,i),tablet:m(u,i),device:m(f,i)||m(u,i)},other:{blackberry:m(c,i),blackberry10:m(s,i),opera:m(v,i),firefox:m(w,i),chrome:m(h,i),device:m(c,i)||m(s,i)||m(v,i)||m(w,i)||m(h,i)}};return d.any=d.apple.device||d.android.device||d.windows.device||d.other.device,d.phone=d.apple.phone||d.android.phone||d.windows.phone,d.tablet=d.apple.tablet||d.android.tablet||d.windows.tablet,d}"undefined"!=typeof module&&module.exports&&"undefined"==typeof window?module.exports=i:"undefined"!=typeof module&&module.exports&&"undefined"!=typeof window?module.exports=i():"function"==typeof define&&define.amd?define([],e.isMobile=i()):e.isMobile=i()}(this);
-},{}],42:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -39376,7 +39128,7 @@ MiniSignal.MiniSignalBinding = MiniSignalBinding;
 exports['default'] = MiniSignal;
 module.exports = exports['default'];
 
-},{}],43:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 /*
 object-assign
 (c) Sindre Sorhus
@@ -39468,7 +39220,7 @@ module.exports = shouldUseNative() ? Object.assign : function (target, source) {
 	return to;
 };
 
-},{}],44:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 'use strict'
 
 module.exports = function parseURI (str, opts) {
@@ -39500,7 +39252,7 @@ module.exports = function parseURI (str, opts) {
   return uri
 }
 
-},{}],45:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 /*!
  * pixi.js - v5.0.2
  * Compiled Tue, 07 May 2019 20:01:34 UTC
@@ -40882,7 +40634,7 @@ exports.filters = filters;
 exports.useDeprecated = useDeprecated;
 
 
-},{"@pixi/accessibility":4,"@pixi/app":5,"@pixi/constants":6,"@pixi/core":7,"@pixi/display":8,"@pixi/extract":9,"@pixi/filter-alpha":10,"@pixi/filter-blur":11,"@pixi/filter-color-matrix":12,"@pixi/filter-displacement":13,"@pixi/filter-fxaa":14,"@pixi/filter-noise":15,"@pixi/graphics":16,"@pixi/interaction":17,"@pixi/loaders":18,"@pixi/math":19,"@pixi/mesh":21,"@pixi/mesh-extras":20,"@pixi/mixin-cache-as-bitmap":22,"@pixi/mixin-get-child-by-name":23,"@pixi/mixin-get-global-position":24,"@pixi/particles":25,"@pixi/polyfill":26,"@pixi/prepare":27,"@pixi/runner":28,"@pixi/settings":29,"@pixi/sprite":32,"@pixi/sprite-animated":30,"@pixi/sprite-tiling":31,"@pixi/spritesheet":33,"@pixi/text":35,"@pixi/text-bitmap":34,"@pixi/ticker":36,"@pixi/utils":37}],46:[function(require,module,exports){
+},{"@pixi/accessibility":2,"@pixi/app":3,"@pixi/constants":4,"@pixi/core":5,"@pixi/display":6,"@pixi/extract":7,"@pixi/filter-alpha":8,"@pixi/filter-blur":9,"@pixi/filter-color-matrix":10,"@pixi/filter-displacement":11,"@pixi/filter-fxaa":12,"@pixi/filter-noise":13,"@pixi/graphics":14,"@pixi/interaction":15,"@pixi/loaders":16,"@pixi/math":17,"@pixi/mesh":19,"@pixi/mesh-extras":18,"@pixi/mixin-cache-as-bitmap":20,"@pixi/mixin-get-child-by-name":21,"@pixi/mixin-get-global-position":22,"@pixi/particles":23,"@pixi/polyfill":24,"@pixi/prepare":25,"@pixi/runner":26,"@pixi/settings":27,"@pixi/sprite":30,"@pixi/sprite-animated":28,"@pixi/sprite-tiling":29,"@pixi/spritesheet":31,"@pixi/text":33,"@pixi/text-bitmap":32,"@pixi/ticker":34,"@pixi/utils":35}],44:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -41068,7 +40820,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],47:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 (function (global){
 /*! https://mths.be/punycode v1.3.2 by @mathias */
 ;(function(root) {
@@ -41602,7 +41354,7 @@ process.umask = function() { return 0; };
 }(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],48:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -41688,7 +41440,7 @@ var isArray = Array.isArray || function (xs) {
   return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{}],49:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -41775,13 +41527,13 @@ var objectKeys = Object.keys || function (obj) {
   return res;
 };
 
-},{}],50:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 'use strict';
 
 exports.decode = exports.parse = require('./decode');
 exports.encode = exports.stringify = require('./encode');
 
-},{"./decode":48,"./encode":49}],51:[function(require,module,exports){
+},{"./decode":46,"./encode":47}],49:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -42542,7 +42294,7 @@ Loader.use = function LoaderUseStatic(fn) {
     return Loader;
 };
 
-},{"./Resource":52,"./async":53,"mini-signals":42,"parse-uri":44}],52:[function(require,module,exports){
+},{"./Resource":50,"./async":51,"mini-signals":40,"parse-uri":42}],50:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -43791,7 +43543,7 @@ if (typeof module !== 'undefined') {
     module.exports.default = Resource; // eslint-disable-line no-undef
 }
 
-},{"mini-signals":42,"parse-uri":44}],53:[function(require,module,exports){
+},{"mini-signals":40,"parse-uri":42}],51:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -44013,7 +43765,7 @@ function queue(worker, concurrency) {
     return q;
 }
 
-},{}],54:[function(require,module,exports){
+},{}],52:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -44092,7 +43844,7 @@ if (typeof module !== 'undefined') {
     module.exports.default = encodeBinary; // eslint-disable-line no-undef
 }
 
-},{}],55:[function(require,module,exports){
+},{}],53:[function(require,module,exports){
 'use strict';
 
 // import Loader from './Loader';
@@ -44149,7 +43901,7 @@ module.exports = Loader;
 module.exports.Loader = Loader;
 module.exports.default = Loader;
 
-},{"./Loader":51,"./Resource":52,"./async":53,"./b64":54}],56:[function(require,module,exports){
+},{"./Loader":49,"./Resource":50,"./async":51,"./b64":52}],54:[function(require,module,exports){
 (function (setImmediate,clearImmediate){
 var nextTick = require('process/browser.js').nextTick;
 var apply = Function.prototype.apply;
@@ -44228,7 +43980,7 @@ exports.clearImmediate = typeof clearImmediate === "function" ? clearImmediate :
   delete immediateIds[id];
 };
 }).call(this,require("timers").setImmediate,require("timers").clearImmediate)
-},{"process/browser.js":46,"timers":56}],57:[function(require,module,exports){
+},{"process/browser.js":44,"timers":54}],55:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -44962,7 +44714,7 @@ Url.prototype.parseHost = function() {
   if (host) this.hostname = host;
 };
 
-},{"./util":58,"punycode":47,"querystring":50}],58:[function(require,module,exports){
+},{"./util":56,"punycode":45,"querystring":48}],56:[function(require,module,exports){
 'use strict';
 
 module.exports = {
