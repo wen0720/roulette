@@ -288,7 +288,7 @@ var touchJS = function () {
           // 計算順逆時針（如果跨越2象限）
           this.clockwise = this.detectClockwiseAcrossQuadrant(this.quadrantRecord);
         } else {
-          // 算順逆時針（如果單一象限）
+          // 計算順逆時針（如果單一象限）
           this.clockwise = this.detectClockwiseInQuadrant(this.quadrantRecord[0], this.onGoingTouch[idxInOngoingTouch].start, this.onGoingTouch[idxInOngoingTouch].end);
         }
 
