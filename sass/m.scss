@@ -1,0 +1,13 @@
+@import '_default';
+@import 'mixin';
+@import 'roulette';
+
+@keyframes rotateToZero {    
+    to {
+        transform: rotate(1800deg);
+    }
+}
+
+.rotate{
+    @include animation(0s, 5s, rotateToZero, 1, forwards, cubic-bezier(0.4, -0.01, 0, 1.67));
+}

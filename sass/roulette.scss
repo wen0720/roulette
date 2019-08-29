@@ -1,0 +1,86 @@
+.wrapper{
+    // position: relative; 
+    width: 100%;
+    padding-bottom: 100%;
+    margin: 20px auto 0 auto;        
+}
+
+#roulette {    
+    position: absolute;
+    overflow: hidden;
+    margin: 50px auto 0 auto;  
+    width: 80%;
+    padding-bottom: 80%;    
+    border-radius: 50%;    
+    background-color: #ddd;      
+    left: 0;
+    right: 0;    
+}
+    
+#roulette ul li {
+    list-style: none;
+    position: absolute;
+    width: 50%;
+    height: 50%;
+    right: 50%;
+    top: 0;
+    -webkit-transform-origin: 100% 100%;
+    -moz-transform-origin: 100% 100%;
+    -ms-transform-origin: 100% 100%;
+    transform-origin: 100% 100%;    
+}
+
+$pieces: 8;
+$skewDegs: $pieces * 54 / 10; 
+// 因為 10 pieces 的 skew 角度是 54deg
+// 所以要幾片，就拿 10 pieces 當作範例去比
+
+@for $i from 1 through $pieces {    
+    .L#{$i}{            
+        @if($i % 2 == 0) {
+            background-color: #FCF6E6;
+        } @else if ($i % 3 == 0) {        
+            background-color: black;
+        } @else {
+            background-color: red;
+        }
+        transform: rotate(#{0 + 360 * ($i - 1)/ $pieces}deg) skew(#{$skewDegs}deg);
+    }    
+}
+
+.wrapper.oldBrowser{
+    mask-image: url(../images/circle.png);
+    mask-position: center;
+    width: 300px;
+    padding-bottom: 300px;
+    overflow: hidden;
+    position: relative;    
+    #roulette{
+        width: 300px;
+        height: 300px;
+        border-top-left-radius: 300px;  
+        border-top-right-radius: 300px;  
+        border-bottom-right-radius:300px;  
+        border-bottom-left-radius: 300px;
+        background-clip:padding-box;   
+        margin:0;   
+        transition: all 0.5s ease-in-out;
+    }
+    #roulette__plate {
+        transition: all 0.5s ease-in-out;
+    }
+}
+
+.boundary{
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    left: 0;
+    right: 0;    
+    &__item{
+        width: 50%;
+        height: 50%;
+        float: left;
+        background: blue;
+    }
+}

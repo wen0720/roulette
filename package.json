@@ -7,12 +7,11 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "NODE_ENV=development gulp",
     "start": "NODE_ENV=production gulp",
-    "lint": "eslint --fix js/app.js"
+    "lint": "eslint --fix js/zingTouch.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "pixi.js": "^5.0.2",
     "babel-core": "^6.26.0",
     "babel-preset-env": "^1.6.0",
     "babel-preset-es2015": "^6.24.1",
@@ -29,8 +28,12 @@
     "gulp-sass": "latest",
     "gulp-strip-debug": "^1.1.0",
     "gulp-uglify": "^3.0.0",
+    "hammerjs": "^2.0.8",
+    "jquery": "^3.4.1",
+    "pixi.js": "^5.0.2",
     "vinyl-buffer": "^1.0.1",
-    "vinyl-source-stream": "^2.0.0"
+    "vinyl-source-stream": "^2.0.0",
+    "zingtouch": "^1.0.6"
   },
   "devDependencies": {
     "eslint": "^6.2.1",
