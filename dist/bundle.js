@@ -189,28 +189,40 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 var touchJS = function () {
   function touchJS() {
-    var _this = this;
+    var _this2 = this;
 
     _classCallCheck(this, touchJS);
 
     this.onGoingTouch = []; // 同時間，所有觸控點軌跡紀錄
     this.finalPos = []; // 完成一次觸控後，起始點、中間點、結束點位置
     this.RouletteCenter = this.getRoulettePos().center; // 輪盤中心位置
+    this.RouletteRight = this.getRoulettePos().rightCenter; // 角度計算的基準點
     this.$roulette = (0, _jquery2.default)('#roulette');
     this.$roulette__plate = (0, _jquery2.default)('#roulette__plate');
     this.totalAngle = 0; // 輪盤的總轉移角度
+    this.hasRotate = 0;
+    this.lastMovePoint = null; // 前一次被紀錄的移動點
+
+    this.startAngle = 0;
 
     (0, _jquery2.default)('.wrapper').on('touchstart', '#roulette__plate', null, function (e) {
-      _this.handleTouchStart(e);
+      _this2.handleTouchStart(e);
     });
 
     (0, _jquery2.default)('.wrapper').on('touchmove', '#roulette__plate', null, function (e) {
-      _this.handleTouchMove(e);
+      _this2.handleTouchMove(e);
     });
 
     (0, _jquery2.default)('.wrapper').on('touchend', '#roulette__plate', null, function (e) {
-      _this.handleTouchEnd(e);
+      _this2.handleTouchEnd(e);
     });
+
+    // document.querySelector('.wrapper').addEventListener('touchmove', (e) => {
+    //   if (Array.prototype.slice.call(e.target.classList).includes('l')) {
+    //     console.log(e)
+    //     this.handleTouchMove(e)
+    //   }
+    // })
 
     // $('body').on('touchstart', (e) => {
     //   alert(this.boundaryRecord)
@@ -221,7 +233,6 @@ var touchJS = function () {
     key: 'handleTouchStart',
     value: function handleTouchStart(e) {
       e.preventDefault();
-      e.stopPropagation();
       var touches = e.changedTouches;
       for (var i = 0; i < touches.length; i++) {
         // 目前所在象限
@@ -236,78 +247,140 @@ var touchJS = function () {
           end: {}
         };
         this.onGoingTouch.push(info);
+
+        this.startAngle = this.getAngleByTan(null, this.copyTouch(touches[i]), true);
       }
     }
   }, {
     key: 'handleTouchMove',
     value: function handleTouchMove(e) {
       e.preventDefault();
-      e.stopPropagation();
       var touches = e.changedTouches;
-      // console.log(touches[0])
 
       for (var i = 0; i < touches.length; i++) {
         var idxInOngoingTouch = this.findOngoingTouchById(touches.identifier)[0].idx;
         if (idxInOngoingTouch < 0) return;
+
+        var MoveLength = this.onGoingTouch[idxInOngoingTouch].move.length;
+        var MoveLengthHalf = Math.floor(this.onGoingTouch[idxInOngoingTouch].move.length / 2);
 
         // 目前所在象限
         var quadrant = this.detectQuadrant(touches[i]);
         // 將 move 的資訊加入，形成軌跡紀錄
         this.onGoingTouch[idxInOngoingTouch].move.push(this.copyTouch(touches[i]));
         this.onGoingTouch[idxInOngoingTouch].quadrant.push(quadrant);
-        // 計算
-        // console.log(this.onGoingTouch[idxInOngoingTouch].move.length)
+
+        // 取得經過的象限紀錄
+        this.quadrantRecord = this.filterSameValueInArray(this.onGoingTouch[idxInOngoingTouch].quadrant);
+
+        // 目前觸控點(終點)
+        var end = this.copyTouch(touches[i]);
+
+        // 目前觸控點與圓心的角度
+        var angleMoveEnd = this.getAngleByTan(null, end, true);
+
+        // 目前已轉動的角度
+        this.rotation = angleMoveEnd - this.startAngle;
+        console.log('moveRotation', this.rotation);
+
+        this.$roulette.css('transform', 'rotate(' + (this.totalAngle + this.rotation) + 'deg)');
       }
-      console.log(touches[0]);
     }
   }, {
     key: 'handleTouchEnd',
     value: function handleTouchEnd(e) {
+      var _this3 = this;
+
       e.preventDefault();
       var touches = e.changedTouches;
-      for (var i = 0; i < touches.length; i++) {
-        var idxInOngoingTouch = this.findOngoingTouchById(touches.identifier)[0].idx;
-        this.onGoingTouch[idxInOngoingTouch].end = this.copyTouch(touches[i]);
 
-        var HalfMoveLen = Math.floor(this.onGoingTouch[idxInOngoingTouch].move.length / 2);
+      var _loop = function _loop(i) {
+        var idxInOngoingTouch = _this3.findOngoingTouchById(touches.identifier)[0].idx;
+        _this3.onGoingTouch[idxInOngoingTouch].end = _this3.copyTouch(touches[i]);
+
+        var HalfMoveLen = Math.floor(_this3.onGoingTouch[idxInOngoingTouch].move.length / 2);
         var pos = {
-          start: this.onGoingTouch[idxInOngoingTouch].start,
-          center: this.onGoingTouch[idxInOngoingTouch].move[HalfMoveLen],
-          end: this.copyTouch(touches[i])
+          start: _this3.onGoingTouch[idxInOngoingTouch].start,
+          center: _this3.onGoingTouch[idxInOngoingTouch].move[HalfMoveLen],
+          end: _this3.copyTouch(touches[i])
         };
 
-        this.finalPos.push(pos);
+        _this3.finalPos.push(pos);
 
-        // 需判斷 - 如果手指都拿掉了
-        // 取得角度，轉動輪盤
-        var angle = this.getAngle();
-        // 取得經過的象限紀錄
-        this.quadrantRecord = this.filterSameValueInArray(this.onGoingTouch[idxInOngoingTouch].quadrant);
+        // 把總角度加上剛剛轉動的角度
+        _this3.totalAngle += _this3.rotation;
 
-        if (this.quadrantRecord.length > 1) {
-          // 計算順逆時針（如果跨越2象限）
-          this.clockwise = this.detectClockwiseAcrossQuadrant(this.quadrantRecord);
-        } else {
-          // 計算順逆時針（如果單一象限）
-          this.clockwise = this.detectClockwiseInQuadrant(this.quadrantRecord[0], this.onGoingTouch[idxInOngoingTouch].start, this.onGoingTouch[idxInOngoingTouch].end);
+        // // 取得經過的象限紀錄
+        _this3.quadrantRecord = _this3.filterSameValueInArray(_this3.onGoingTouch[idxInOngoingTouch].quadrant);
+
+        var cycleArr = _this3.onGoingTouch[idxInOngoingTouch].quadrant.filter(function (el) {
+          return el === 1 || el === 4;
+        }).filter(function (el, idx, arr) {
+          if (idx === arr.length - 1) {
+            return true; /* 若是最後一個 */
+          }
+          return el !== arr[idx + 1];
+        });
+        console.log(_this3.quadrantRecord);
+
+        if (cycleArr.length > 1) {
+          // 至少轉了快1圈
+
         }
 
-        if (!this.clockwise) angle = angle * -1;
+        if (_this3.quadrantRecord.length > 1) {
+          // 計算順逆時針（如果跨越2象限）
+          _this3.clockwise = _this3.detectClockwiseAcrossQuadrant(_this3.quadrantRecord);
+        } else {
+          // 計算順逆時針（如果單一象限）
+          _this3.clockwise = _this3.detectClockwiseInQuadrant(_this3.quadrantRecord[0], _this3.onGoingTouch[idxInOngoingTouch].start, _this3.onGoingTouch[idxInOngoingTouch].end);
+        }
 
-        console.log(this.quadrantRecord);
-        console.log(angle);
-        this.totalAngle += angle;
-        this.$roulette.css('transform', 'rotate(' + this.totalAngle + 'deg)');
+        var effectDeg = Math.abs(_this3.rotation);
+        if (!_this3.clockwise) effectDeg = effectDeg * -1;
+
+        var _this = _this3;
+        function rotateEffect() {
+          // 控制轉動的動畫
+          var lastTime = +new Date();
+          _this.hasRotate = 0;
+
+          function rotate() {
+            // 每次轉動的值
+            var perRotate = (new Date() - lastTime) / 400 * effectDeg * 2;
+            // 在動畫中，已經轉動了多少
+            _this.hasRotate += perRotate;
+            // 計算從開始總共轉動的量
+            _this.totalAngle += perRotate;
+
+            _this.$roulette.css('transform', 'rotate(' + _this.totalAngle + 'deg)');
+            lastTime = +new Date();
+
+            if (_this.hasRotate <= effectDeg && _this.clockwise) {
+              // 如果是順時針
+              window.requestAnimationFrame(rotate);
+            } else if (_this.hasRotate >= effectDeg && !_this.clockwise) {
+              // 如果是逆時針
+              window.requestAnimationFrame(rotate);
+            } else {
+              // 動畫結束
+              console.log('final', _this.totalAngle);
+            }
+          }
+          rotate();
+        }
+        rotateEffect();
 
         // 清空軌跡記錄
-        this.onGoingTouch.splice(idxInOngoingTouch, 1);
+        _this3.onGoingTouch.splice(idxInOngoingTouch, 1);
         // 清空先前的位置資訊
-        this.finalPos.length = 0;
+        _this3.finalPos.length = 0;
+      };
+
+      for (var i = 0; i < touches.length; i++) {
+        _loop(i);
       }
     }
-
-    // it's best to copy the bits you care about, rather than referencing the entire object.
-
   }, {
     key: 'copyTouch',
     value: function copyTouch(touch) {
@@ -336,18 +409,19 @@ var touchJS = function () {
         rightTop: { x: offset.left + radius * 2, y: offset.top },
         leftBottom: { x: offset.left, y: offset.top + radius * 2 },
         rightBottom: { x: offset.left + radius * 2, y: offset.top + radius * 2 },
-        center: { x: offset.left + radius, y: offset.top + radius }
+        center: { x: offset.left + radius, y: offset.top + radius },
+        rightCenter: { x: offset.left + radius * 2, y: offset.top + radius * 1 },
+        leftCenter: { x: offset.left, y: offset.top + radius * 1 }
       };
       return coordinate;
     }
   }, {
     key: 'getAngle',
-    value: function getAngle() {
-      // 先寫死只抓第一個觸控點
+    value: function getAngle(pointFirst, pointSecond) {
       // 三個點
       var center = this.RouletteCenter;
-      var point1 = this.floorNumInObj(this.finalPos[0].start);
-      var point2 = this.floorNumInObj(this.finalPos[0].end);
+      var point1 = this.floorNumInObj(pointFirst);
+      var point2 = this.floorNumInObj(pointSecond);
 
       // 三邊長
       var opposite = Math.sqrt(Math.pow(Math.abs(point1.pageX - point2.pageX), 2) + Math.pow(Math.abs(point1.pageY - point2.pageY), 2));
@@ -359,6 +433,18 @@ var touchJS = function () {
       var angle = Math.round(Math.acos(COSX) * (180 / Math.PI));
 
       return angle;
+    }
+  }, {
+    key: 'getAngleByTan',
+    value: function getAngleByTan(pointStart, pointEnd, isCenter) {
+      if (isCenter) {
+        // 弧度
+        var _x = Math.atan2(pointEnd.pageY - this.RouletteCenter.y, pointEnd.pageX - this.RouletteCenter.x);
+        return _x * 180 / Math.PI;
+      }
+      var x = Math.atan2(pointEnd.pageY - pointStart.pageY, pointEnd.pageX - pointStart.pageX);
+      var rotation = x * 180 / Math.PI;
+      return rotation;
     }
 
     // 將物件裡的數字整數化
@@ -429,16 +515,96 @@ var touchJS = function () {
       return clockwise;
     }
   }, {
+    key: 'countMidPoint',
+    value: function countMidPoint(point1, point2) {
+      var x = (point1.pageX + point2.pageX) / 2;
+      var y = (point1.pageY + point2.pageY) / 2;
+      return { x: x, y: y };
+    }
+  }, {
+    key: 'directionByCenter',
+    value: function directionByCenter(point) {
+      return {
+        isLeft: point.pageX < this.RouletteCenter.x,
+        isTop: point.pageY > this.RouletteCenter.y
+      };
+    }
+  }, {
     key: 'countSlope',
     value: function countSlope(pointStart, pointEnd) {
       var x = pointStart.pageX - pointEnd.pageX;
       var y = pointStart.pageY - pointEnd.pageY;
+      console.log(x, y);
       return (x / y).toFixed(3);
     }
   }]);
 
   return touchJS;
 }();
+
+// (function() {
+//   var init, rotate, start, stop,
+//     active = false,
+//     angle = 0, // 目前總角度
+//     rotation = 0, // 當次轉移角度
+//     startAngle = 0,
+//     center = {
+//       x: 0,
+//       y: 0
+//     },
+//     R2D = 180 / Math.PI,
+//     rot = document.getElementById('rotate');
+
+//   init = function() {
+//     rot.addEventListener("mousedown", start, false);
+//     $(document).bind('mousemove', function(event) {
+//       if (active === true) {
+//         event.preventDefault();
+//         rotate(event);
+//       }
+//     });
+//     $(document).bind('mouseup', function(event) {
+//       event.preventDefault();
+//       stop(event);
+//     });
+//   };
+
+//   start = function(e) {
+//     e.preventDefault();
+//     var bb = this.getBoundingClientRect(),
+//       t = bb.top,
+//       l = bb.left,
+//       h = bb.height,
+//       w = bb.width,
+//       x, y;
+//     center = {
+//       x: l + (w / 2),
+//       y: t + (h / 2)
+//     };
+//     x = e.clientX - center.x;
+//     y = e.clientY - center.y;
+//     startAngle = R2D * Math.atan2(y, x);
+//     return active = true;
+//   };
+
+//   rotate = function(e) {
+//     e.preventDefault();
+//     var x = e.clientX - center.x,
+//       y = e.clientY - center.y,
+//       d = R2D * Math.atan2(y, x);
+//     rotation = d - startAngle;
+//     return rot.style.webkitTransform = "rotate(" + (angle + rotation) + "deg)";
+//   };
+
+//   stop = function() {
+//     angle += rotation;
+//     return active = false;
+//   };
+
+//   init();
+
+// }).call(this);
+
 
 exports.default = touchJS;
 
