@@ -284,6 +284,8 @@ var touchJS = function () {
         console.log('moveRotation', this.rotation);
 
         this.$roulette.css('transform', 'rotate(' + (this.totalAngle + this.rotation) + 'deg)');
+
+        this.cycle = this.calculateCycle(this.onGoingTouch[idxInOngoingTouch].quadrant);
       }
     }
   }, {
@@ -313,21 +315,6 @@ var touchJS = function () {
         // // 取得經過的象限紀錄
         _this3.quadrantRecord = _this3.filterSameValueInArray(_this3.onGoingTouch[idxInOngoingTouch].quadrant);
 
-        var cycleArr = _this3.onGoingTouch[idxInOngoingTouch].quadrant.filter(function (el) {
-          return el === 1 || el === 4;
-        }).filter(function (el, idx, arr) {
-          if (idx === arr.length - 1) {
-            return true; /* 若是最後一個 */
-          }
-          return el !== arr[idx + 1];
-        });
-        console.log(_this3.quadrantRecord);
-
-        if (cycleArr.length > 1) {
-          // 至少轉了快1圈
-
-        }
-
         if (_this3.quadrantRecord.length > 1) {
           // 計算順逆時針（如果跨越2象限）
           _this3.clockwise = _this3.detectClockwiseAcrossQuadrant(_this3.quadrantRecord);
@@ -337,6 +324,15 @@ var touchJS = function () {
         }
 
         var effectDeg = Math.abs(_this3.rotation);
+        console.log('effectDeg', effectDeg);
+        if (_this3.cycle > 1) {
+          _this3.cycle = _this3.cycle > 5 ? 5 : _this3.cycle;
+          effectDeg = effectDeg + 360 * _this3.cycle;
+        } else if (_this3.cycle == 1) {
+          // 目前已轉動的角度
+          effectDeg = effectDeg + 360;
+        }
+
         if (!_this3.clockwise) effectDeg = effectDeg * -1;
 
         var _this = _this3;
@@ -346,11 +342,11 @@ var touchJS = function () {
           _this.hasRotate = 0;
 
           function rotate() {
-            // 每次轉動的值
-            var perRotate = (new Date() - lastTime) / 400 * effectDeg * 2;
+            // 每次轉動的值          
+            var perRotate = (new Date() - lastTime) / 500 * effectDeg;
             // 在動畫中，已經轉動了多少
             _this.hasRotate += perRotate;
-            // 計算從開始總共轉動的量
+            // 計算從開始總共轉動的量，為了下次轉動時，能夠帶入
             _this.totalAngle += perRotate;
 
             _this.$roulette.css('transform', 'rotate(' + _this.totalAngle + 'deg)');
@@ -536,6 +532,40 @@ var touchJS = function () {
       var y = pointStart.pageY - pointEnd.pageY;
       console.log(x, y);
       return (x / y).toFixed(3);
+    }
+  }, {
+    key: 'calculateCycle',
+    value: function calculateCycle(arr) {
+      // 我需要去判斷 1\2\3\4 有幾個，只取最少的計算圈數 
+      // 從 index 0 開始分別為 1,2,3,4象限
+      var eachQuadrantTimes = [0, 0, 0, 0];
+      var record = arr.filter(function (el, idx, arr) {
+        return idx === arr.length - 1 ? true : el === arr[idx + 1] ? false : true;
+      });
+      record.forEach(function (el) {
+        switch (el) {
+          case 1:
+            eachQuadrantTimes[0] = eachQuadrantTimes[0] + 1;
+            break;
+          case 2:
+            eachQuadrantTimes[1] = eachQuadrantTimes[1] + 1;
+            break;
+          case 3:
+            eachQuadrantTimes[2] = eachQuadrantTimes[2] + 1;
+            break;
+          case 4:
+            eachQuadrantTimes[3] = eachQuadrantTimes[3] + 1;
+            break;
+        }
+      });
+      if (eachQuadrantTimes.indexOf(0) > -1) {
+        return 0;
+      } else {
+        eachQuadrantTimes.sort(function (a, b) {
+          return a - b;
+        });
+        return eachQuadrantTimes[0];
+      }
     }
   }]);
 

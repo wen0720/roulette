@@ -88,8 +88,10 @@ export default class touchJS {
       // 目前已轉動的角度
       this.rotation = angleMoveEnd - this.startAngle
       console.log('moveRotation', this.rotation)
-
+                  
       this.$roulette.css('transform', `rotate(${this.totalAngle + (this.rotation)}deg)`)
+
+      this.cycle = this.calculateCycle(this.onGoingTouch[idxInOngoingTouch].quadrant)             
     }
   }
 
@@ -113,20 +115,7 @@ export default class touchJS {
       this.totalAngle += this.rotation
 
       // // 取得經過的象限紀錄
-      this.quadrantRecord = this.filterSameValueInArray(this.onGoingTouch[idxInOngoingTouch].quadrant)
-
-      const cycleArr = this.onGoingTouch[idxInOngoingTouch].quadrant
-        .filter(el => el === 1 || el === 4)
-        .filter((el, idx, arr) => {
-          if (idx === arr.length - 1) { return true /* 若是最後一個 */ }
-          return el !== arr[idx + 1]
-        })
-      console.log(this.quadrantRecord)
-
-      if (cycleArr.length > 1) {
-        // 至少轉了快1圈
-
-      }
+      this.quadrantRecord = this.filterSameValueInArray(this.onGoingTouch[idxInOngoingTouch].quadrant)      
 
       if (this.quadrantRecord.length > 1) {
         // 計算順逆時針（如果跨越2象限）
@@ -138,10 +127,20 @@ export default class touchJS {
           this.onGoingTouch[idxInOngoingTouch].start,
           this.onGoingTouch[idxInOngoingTouch].end
         )
-      }
+      }      
 
       let effectDeg = Math.abs(this.rotation)
-      if (!this.clockwise) effectDeg = effectDeg * -1
+      console.log('effectDeg',effectDeg)
+      if (this.cycle > 1) {
+        this.cycle = this.cycle > 5 ? 5 : this.cycle   
+        effectDeg = effectDeg + 360 * this.cycle                     
+      } else if (this.cycle == 1){
+        // 目前已轉動的角度
+        effectDeg = effectDeg + 360        
+      }
+
+      if (!this.clockwise) effectDeg = effectDeg * -1      
+
 
       const _this = this
       function rotateEffect () {
@@ -150,11 +149,11 @@ export default class touchJS {
         _this.hasRotate = 0
 
         function rotate () {
-          // 每次轉動的值
-          const perRotate = (new Date() - lastTime) / 400 * effectDeg * 2
+          // 每次轉動的值          
+          const perRotate = (new Date() - lastTime) / 500 * effectDeg                   
           // 在動畫中，已經轉動了多少
           _this.hasRotate += perRotate
-          // 計算從開始總共轉動的量
+          // 計算從開始總共轉動的量，為了下次轉動時，能夠帶入
           _this.totalAngle += perRotate
 
           _this.$roulette.css('transform', `rotate(${_this.totalAngle}deg)`)
@@ -321,6 +320,38 @@ export default class touchJS {
     const y = pointStart.pageY - pointEnd.pageY
     console.log(x, y)
     return (x / y).toFixed(3)
+  }
+
+  calculateCycle (arr) {
+    // 我需要去判斷 1\2\3\4 有幾個，只取最少的計算圈數 
+    // 從 index 0 開始分別為 1,2,3,4象限
+    let eachQuadrantTimes = [0, 0, 0, 0]
+    const record = arr.filter((el, idx, arr) => {      
+      return idx === arr.length - 1 ? true :
+             el === arr[idx + 1] ? false : true 
+    })
+    record.forEach(el => {
+      switch(el) {
+        case 1:
+          eachQuadrantTimes[0] = eachQuadrantTimes[0] + 1
+          break;
+        case 2:
+          eachQuadrantTimes[1] = eachQuadrantTimes[1] + 1
+          break;
+        case 3:
+          eachQuadrantTimes[2] = eachQuadrantTimes[2] + 1
+          break;
+        case 4:
+          eachQuadrantTimes[3] = eachQuadrantTimes[3] + 1
+          break;
+      }      
+    })
+    if (eachQuadrantTimes.indexOf(0) > -1) {
+      return 0
+    } else {
+      eachQuadrantTimes.sort((a, b) => a - b )
+      return eachQuadrantTimes[0]          
+    }   
   }
 }
 
