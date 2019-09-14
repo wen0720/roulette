@@ -203,7 +203,7 @@ export default class touchJS {
       if (effectDeg - this.hasRotate < 180 * constRotate) {
         minus = constRotate / 120
         perRotate = perRotate - minus > 1 ? perRotate - minus : perRotate
-        console.log('perRotate', perRotate, 'minus', minus)
+        // console.log('perRotate', perRotate, 'minus', minus)
       }
 
       // 在動畫中，已經轉動了多少
