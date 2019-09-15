@@ -38,9 +38,7 @@ $skewDegs: $pieces * 54 / 10;
 @for $i from 1 through $pieces {    
     .L#{$i}{            
         @if($i % 2 == 0) {
-            background-color: #FCF6E6;
-        } @else if ($i % 3 == 0) {        
-            background-color: black;
+            background-color: #FCF6E6;        
         } @else {
             background-color: red;
         }
@@ -82,5 +80,43 @@ $skewDegs: $pieces * 54 / 10;
         height: 50%;
         float: left;
         background: blue;
+    }
+}
+
+.point{
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 65px 20px 0 20px;
+    border-color: #222 transparent transparent transparent;
+    z-index: 1000;
+    position: absolute;
+    left: 0;
+    right: 0;
+    margin: auto;
+    top: 0;
+}
+
+.text{
+    text-align: center;
+    margin: 50px 0 0;
+    font-size: 16px;
+    padding: 0 10px;
+}
+
+.content{
+    input {
+        border: 1px solid #ddd;
+        display: block;
+        width: 80%;
+        height: 40px;
+        margin: 20px auto;
+        font-size: 16px;
+        padding: 5px;
+    }
+    img {
+        display: block;
+        width: 60%;
+        margin: 0 auto;
     }
 }
