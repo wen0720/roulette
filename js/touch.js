@@ -31,7 +31,7 @@ export default class touchJS {
     e.preventDefault()
     if (this.isrotating) return
     document.querySelector('.content').innerHTML = ''
-    document.querySelector('.text').innerHTML = '請用手指轉輪盤獲得生日禮物<br>(免費大放送，可以重複轉)'
+    // document.querySelector('.text').innerHTML = '請用手指轉輪盤獲得生日禮物<br>(免費大放送，可以重複轉)'
 
     const touches = e.changedTouches
     // 紀錄開始時間
@@ -227,22 +227,6 @@ export default class touchJS {
         // 動畫結束
         this.isrotating = false
         console.log('final', this.totalAngle)
-        const textArr = [
-          '恭喜你獲得，玟憲的一句「生日快樂」！',
-          '恭喜你獲得，玟憲的冷笑話一則！「你好帥！」',
-          '恭喜你獲得，玟憲的照片一張',
-          '恭喜你獲得地獄版生日禮物，請客一次',
-          '恭喜你獲得最大獎！！『可以自行輸入生日禮物』(不能送出)'
-        ]
-        const num = this.getRandomInt(0, 5)
-
-        if (num === 4) {
-          document.querySelector('.content').innerHTML = `<input type="text"></input>`
-        }
-        if (num === 2) {
-          document.querySelector('.content').innerHTML = `<img src="./images/getImage.jpeg">`
-        }
-        document.querySelector('.text').innerHTML = textArr[num]
       }
     }
     rotate()
