@@ -114,7 +114,7 @@ class Game {
   }
 }
 
-// const game = new Game()
+// const game = new Game()\
 
 const pages = {
   'index.html': Game,

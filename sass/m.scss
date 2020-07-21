@@ -2,7 +2,7 @@
 @import 'mixin';
 @import 'roulette';
 
-@keyframes rotateToZero {    
+@keyframes rotateToZero {
     to {
         transform: rotate(1800deg);
     }
@@ -10,4 +10,30 @@
 
 .rotate{
     @include animation(0s, 5s, rotateToZero, 1, forwards, cubic-bezier(0.4, -0.01, 0, 1.67));
+}
+
+.block{
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: 0;
+    z-index: 1000;
+    &.none {
+        display: none;
+    }
+}
+
+.sq{
+    width: 20px;
+    height: 20px;
+    border: 1px solid #000;
+}
+
+.red{
+    background-color: red;
+}
+
+.wh{
+    background-color: #FCF6E6;
 }
