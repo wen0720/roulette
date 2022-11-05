@@ -18,7 +18,7 @@
     "babelify": "^8.0.0",
     "browserify": "^16.1.1",
     "envify": "^4.1.0",
-    "gulp": "3.9.1",
+    "gulp": "4.0.2",
     "gulp-autoprefixer": "latest",
     "gulp-babel": "^7.0.0",
     "gulp-connect": "latest",
